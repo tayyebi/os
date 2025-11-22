@@ -6,7 +6,7 @@ OUTPUT_ISO=tayyebi-os.iso
 WORKDIR=/tmp/tayyebi-os-build
 SETUP_SCRIPT=setup-tayyebi-os.sh
 
-.PHONY: iso clean
+.PHONY: iso clean contrib-prereq build-deps release
 
 iso: $(OUTPUT_ISO)
 
@@ -26,6 +26,55 @@ $(OUTPUT_ISO): $(ALPINE_ISO) $(SETUP_SCRIPT)
 	chroot $(WORKDIR) apk del alpine-base linux-firmware-other || true
 	mkisofs -o $(OUTPUT_ISO) -b boot/syslinux/isolinux.bin -c boot/syslinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $(WORKDIR)
 	@echo "ISO built: $(OUTPUT_ISO)"
+
+# Cross-distro package install function
+install_pkg = \
+	if command -v apt-get >/dev/null; then \
+		sudo apt-get update; \
+		sudo apt-get install -y $(1); \
+	elif command -v dnf >/dev/null; then \
+		sudo dnf install -y $(1); \
+	elif command -v yum >/dev/null; then \
+		sudo yum install -y $(1); \
+	elif command -v zypper >/dev/null; then \
+		sudo zypper install -y $(1); \
+	elif command -v pacman >/dev/null; then \
+		sudo pacman -Sy --noconfirm $(1); \
+	elif command -v apk >/dev/null; then \
+		sudo apk add $(1); \
+	else \
+		echo 'No supported package manager found!'; exit 1; \
+	fi
+
+contrib-prereq:
+	@echo "Installing contributor prerequisites (git, gh, shellcheck)..."
+	@$(call install_pkg,git)
+	@$(call install_pkg,shellcheck)
+	@# Try to install gh via snap, then via package manager
+	@if command -v snap >/dev/null; then \
+		sudo snap install gh || true; \
+	else \
+		$(call install_pkg,gh) || echo "Install gh CLI manually if unavailable."; \
+	fi
+
+build-deps:
+	@echo "Installing local build dependencies (p7zip-full, mkisofs)..."
+	@$(call install_pkg,p7zip-full)
+	@$(call install_pkg,mkisofs)
+
+release:
+	@echo "Tagging and releasing new version..."
+	@if ! command -v gh >/dev/null; then \
+		echo 'gh CLI not found. Please install it for automated releases.'; exit 1; \
+	fi
+	@if ! gh auth status >/dev/null 2>&1; then \
+		echo 'GitHub CLI not authenticated. Running gh auth login...'; \
+		gh auth login; \
+	fi
+	@git pull --tags
+	@VERSION=$$(git describe --tags --abbrev=0 | awk -F. '{OFS="."; $$NF++; print}' || echo "v1.0") && \
+	git tag $$VERSION && git push origin $$VERSION && \
+	gh release create $$VERSION $(OUTPUT_ISO) --title "tayyebi-os $$VERSION" --notes "Automated release: Alpine-based, Docker & Portainer pre-installed, ISO build via Makefile."
 
 clean:
 	rm -rf $(WORKDIR) $(ALPINE_ISO) $(OUTPUT_ISO)
