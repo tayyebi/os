@@ -1,0 +1,41 @@
+name: Build and Release ISO
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full mkisofs
+
+      - name: Download Alpine ISO
+        run: |
+          wget -O alpine.iso https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-standard-3.19.0-x86_64.iso
+
+      - name: Build tayyebi-os ISO
+        run: |
+          chmod +x tools/make-iso.sh
+          ./tools/make-iso.sh alpine.iso tayyebi-os.iso
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tayyebi-os-iso
+          path: tayyebi-os.iso
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          files: tayyebi-os.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
