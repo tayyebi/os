@@ -1,118 +1,114 @@
-docker run -d \
-  --name=portainer \
-  --restart=always \
-  -p 9000:9000 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $PORTAINER_DATA:/data \
-  portainer/portainer-ce
-
-
 # tayyebi-os
-
-**Author:** GitHub Copilot
 
 [![Build ISO](https://github.com/tayyebi/os/actions/workflows/build-iso.yml/badge.svg)](https://github.com/tayyebi/os/actions/workflows/build-iso.yml)
 [![Release](https://img.shields.io/github/v/release/tayyebi/os?label=latest%20ISO)](https://github.com/tayyebi/os/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Minimal Alpine-based Linux distribution for data centers, with Docker and Portainer pre-installed. Automated ISO builds are available in [GitHub Releases](https://github.com/tayyebi/os/releases).
-
----
-
-## Features
-
-- Alpine Linux base (minimal footprint)
-- All disk and network drivers (default Alpine kernel)
-- Docker installed and enabled
-- Portainer installed via Docker
-- First boot prompts for Portainer connection info
-- Ready for data center deployment
+> **Minimal, automated Alpine Linux for data centers.**
+>
+> Boots fast, runs Docker & Portainer out of the box, and is ready for cloud or bare metal deployment.
 
 ---
 
-## Quick Start
+## 🚀 Features
 
-1. Download the latest tayyebi-os ISO from [Releases](https://github.com/tayyebi/os/releases).
-2. Write the ISO to a USB drive:
-  ```sh
-  sudo dd if=tayyebi-os-<version>.iso of=/dev/sdX bs=4M status=progress
-  sync
-  ```
-3. Boot your server from the USB and follow the on-screen instructions to set up Portainer.
+- **Ultra-minimal Alpine base** — tiny footprint, fast boot
+- **Full disk & network support** — default Alpine kernel drivers
+- **Docker pre-installed** — ready for containers
+- **Portainer UI** — manage Docker visually
+- **First-boot setup prompt** — guides admin setup
+- **Automated ISO builds** — every push triggers a new release
 
 ---
 
-## Automated Build & Release
+## 🏁 Quick Start
 
-Every push to `main` triggers a GitHub Actions workflow that:
-- Builds a tayyebi-os ISO from Alpine Linux
-- Injects Docker and Portainer setup scripts
-- Publishes the ISO as a release artifact
+1. **Download the latest ISO** from [Releases](https://github.com/tayyebi/os/releases).
+2. **Write to USB**:
+   ```sh
+   sudo dd if=tayyebi-os-<version>.iso of=/dev/sdX bs=4M status=progress
+   sync
+   ```
+3. **Boot your server** and follow the Portainer setup prompt.
+
+---
+
+## 🛠️ Automated Build & CI/CD
+
+Every push to `main` triggers GitHub Actions:
+- Downloads Alpine ISO
+- Injects Docker & Portainer setup scripts
+- Builds tayyebi-os ISO
+- Publishes ISO to [Releases](https://github.com/tayyebi/os/releases)
 
 See `.github/workflows/build-iso.yml` for details.
 
 ---
 
-## Manual Build Instructions
+## 🧑‍💻 Manual Build Instructions
 
 1. Download Alpine Linux (sys) ISO: https://alpinelinux.org/downloads/
 2. Extract ISO contents and copy to a working directory.
-3. Add the following post-install script as `/root/setup-tayyebi-os.sh`:
-  ```sh
-  #!/bin/sh
-  apk update
-  apk add docker
-  rc-update add docker boot
-  service docker start
-  # Install Portainer
-  PORTAINER_DATA="/opt/portainer"
-  mkdir -p $PORTAINER_DATA
-
-  docker run -d \
-    --name=portainer \
-    --restart=always \
-    -p 9000:9000 \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $PORTAINER_DATA:/data \
-    portainer/portainer-ce
-
-  # Prompt for Portainer connection info
-  cat <<EOF
-  ============================
-  Portainer is running on port 9000.
-  Please connect via browser and set up your admin account.
-  ============================
-  EOF
-  ```
-4. Add `setup-tayyebi-os.sh` to `/etc/local.d/` and enable local service:
-  ```sh
-  cp /root/setup-tayyebi-os.sh /etc/local.d/setup-tayyebi-os.start
-  chmod +x /etc/local.d/setup-tayyebi-os.start
-  rc-update add local default
-  ```
+3. Add the post-install script as `/root/setup-tayyebi-os.sh`:
+   ```sh
+   #!/bin/sh
+   apk update
+   apk add docker
+   rc-update add docker boot
+   service docker start
+   PORTAINER_DATA="/opt/portainer"
+   mkdir -p $PORTAINER_DATA
+   docker run -d \
+     --name=portainer \
+     --restart=always \
+     -p 9000:9000 \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -v $PORTAINER_DATA:/data \
+     portainer/portainer-ce
+   cat <<EOF
+   ============================
+   Portainer is running on port 9000.
+   Please connect via browser and set up your admin account.
+   ============================
+   EOF
+   ```
+4. Add script to `/etc/local.d/` and enable local service:
+   ```sh
+   cp /root/setup-tayyebi-os.sh /etc/local.d/setup-tayyebi-os.start
+   chmod +x /etc/local.d/setup-tayyebi-os.start
+   rc-update add local default
+   ```
 5. Remove unnecessary packages:
-  ```sh
-  apk del alpine-base linux-firmware-other
-  ```
+   ```sh
+   apk del alpine-base linux-firmware-other
+   ```
 6. Remaster the ISO using `alpine-make-iso` or manual squashfs editing.
 
 ---
 
-## Contributing
+## ✅ Test Checklist
 
-Pull requests are welcome! Please open issues for feature requests or bug reports.
-
----
-
-## Testing & Validation
-
-Before releasing a new ISO, validate:
-- [ ] ISO boots on real and virtual hardware (QEMU, VirtualBox, bare metal)
+- [ ] ISO boots on real & virtual hardware (QEMU, VirtualBox, bare metal)
 - [ ] Docker service starts automatically
-- [ ] Portainer is accessible on port 9000
+- [ ] Portainer accessible on port 9000
 - [ ] First boot prompt appears and is clear
 - [ ] Unnecessary packages are removed
 - [ ] Setup script is idempotent and logs errors
 
-## License
+---
+
+## 🤝 Contributing
+
+Pull requests and issues are welcome! Please:
+- Open issues for bugs or feature requests
+- Fork and submit PRs for improvements
+
+---
+
+## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+**Author:** GitHub Copilot

@@ -1,0 +1,19 @@
+# tayyebi-os .gitignore
+
+# ISO and build artifacts
+*.iso
+/tmp/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Alpine ISO
+alpine.iso
