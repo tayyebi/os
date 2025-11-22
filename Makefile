@@ -6,9 +6,27 @@ OUTPUT_ISO=tayyebi-os.iso
 WORKDIR=/tmp/tayyebi-os-build
 SETUP_SCRIPT=setup-tayyebi-os.sh
 
-.PHONY: iso clean contrib-prereq build-deps release
+.PHONY: iso clean contrib-prereq build-deps release test mount umount
 
 iso: $(OUTPUT_ISO)
+
+test:
+	@echo "Running ISO validation tests..."
+	@chmod +x tests/validate-iso.sh
+	@sudo tests/validate-iso.sh $(OUTPUT_ISO)
+
+mount:
+	@echo "Mounting $(OUTPUT_ISO) to /mnt/tayyebi-os..."
+	@sudo mkdir -p /mnt/tayyebi-os
+	@sudo mount -o loop,ro $(OUTPUT_ISO) /mnt/tayyebi-os
+	@echo "ISO mounted at /mnt/tayyebi-os"
+	@echo "To unmount, run: make umount"
+
+umount:
+	@echo "Unmounting /mnt/tayyebi-os..."
+	@sudo umount /mnt/tayyebi-os || true
+	@sudo rmdir /mnt/tayyebi-os || true
+	@echo "ISO unmounted"
 
 $(ALPINE_ISO):
 	wget -O $(ALPINE_ISO) $(ALPINE_ISO_URL)
@@ -19,6 +37,11 @@ $(OUTPUT_ISO): $(ALPINE_ISO) $(SETUP_SCRIPT)
 	7z x $(ALPINE_ISO) -o$(WORKDIR)
 	mkdir -p $(WORKDIR)/root
 	mkdir -p $(WORKDIR)/etc/local.d
+	# ensure common kernel/initramfs name variants exist (vmlinuzlts, initramfslts)
+	mkdir -p $(WORKDIR)/boot
+	cd $(WORKDIR)/boot && ln -sf vmlinuz-lts vmlinuzlts || true
+	cd $(WORKDIR)/boot && ln -sf initramfs-lts initramfslts || true
+	cd $(WORKDIR)/boot && ln -sf System.map-lts System.maplts || true
 	cp $(SETUP_SCRIPT) $(WORKDIR)/root/$(SETUP_SCRIPT)
 	cp $(WORKDIR)/root/$(SETUP_SCRIPT) $(WORKDIR)/etc/local.d/setup-tayyebi-os.start
 	chmod +x $(WORKDIR)/etc/local.d/setup-tayyebi-os.start

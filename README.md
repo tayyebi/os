@@ -45,7 +45,26 @@ See `.github/workflows/build-iso.yml` for details.
 
 ---
 
-## 🧑‍💻 Manual Build Instructions
+## � Testing & Validation
+
+Run the ISO validation tests to ensure the ISO is installable:
+
+```sh
+make test
+```
+
+This runs `tests/validate-iso.sh`, which checks:
+- ISO structure and validity
+- Kernel and initramfs presence
+- Boot configuration files
+- Setup script presence and syntax
+- Symlink variants for compatibility
+
+All tests must pass before deployment.
+
+---
+
+## �🧑‍💻 Manual Build Instructions
 
 1. Download Alpine Linux (sys) ISO: https://alpinelinux.org/downloads/
 2. Extract ISO contents and copy to a working directory.
